@@ -1,231 +1,176 @@
-# Kilo CLI in Docker
+# Kilo in a Box
 
-Run Kilo CLI inside Docker while keeping your source code on your local
-computer. This setup builds a custom Docker image with Kilo installed
-**once**, mounts your local project directory into the container, and
-persists Kilo's configuration in Docker named volumes.
+Run [Kilo CLI](https://kilo.ai/docs/code-with-ai/platforms/cli) inside
+Docker without installing Node.js or Kilo directly on your host. Clone
+this repository, build the image once, authenticate, and start coding.
 
-## What this setup provides
+Repository: `git@github.com:akumar261089/kilo-in-a-box.git`
 
-- Kilo CLI preinstalled in a reusable Docker image.
-- No `npm install` every time you launch Kilo.
-- Your project files mounted from your host into `/workspace`.
-- Persistent Kilo configuration and authentication data in named
+## What you get
+
+- Kilo CLI installed in a reusable Docker image.
+- No `npm install` every time you start a session.
+- A local project directory mounted into the container.
+- Persistent Kilo configuration/authentication data in Docker named
   volumes.
-- An interactive terminal for using Kilo.
-- No need to install Node.js or Kilo CLI directly on your host.
+- An interactive terminal for Kilo CLI.
+- A repeatable setup for Windows, macOS, and Linux.
 
-> **Safety:** Kilo is an agentic coding tool. It can modify files and
-> run commands. Use Git or backups, review changes, and mount only
+> **Safety:** Kilo is an agentic coding tool. It can edit files and run
+> commands. Use Git or backups, review its changes, and only mount
 > directories you want it to access.
 
 ## 1. Prerequisites
 
-Install Docker Desktop on Windows/macOS, or Docker Engine and the Docker
-Compose plugin on Linux.
+Install:
 
-Verify the installation:
+- **Git**
+- **Docker Desktop** on Windows/macOS, or Docker Engine and the Docker
+  Compose plugin on Linux.
+- Access to this repository. For SSH cloning, your GitHub SSH key must
+  be configured with GitHub. If you do not use SSH, clone using the
+  repository's HTTPS URL instead.
+
+Verify the tools:
 
 ```bash
+git --version
 docker --version
 docker compose version
 ```
 
-## 2. Create the directory structure
+## 2. Clone the repository
 
-Create a folder named `kilo-docker` with a `workspace` subdirectory:
+Clone the repository; you do not need to create the Dockerfile or
+Compose file manually.
+
+```bash
+git clone git@github.com:akumar261089/kilo-in-a-box.git
+cd kilo-in-a-box
+```
+
+If SSH authentication is not configured, use HTTPS:
+
+```bash
+git clone https://github.com/akumar261089/kilo-in-a-box.git
+cd kilo-in-a-box
+```
+
+The repository should include the Dockerfile and Compose configuration.
+The expected layout is:
 
 ```text
-kilo-docker/
+kilo-in-a-box/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── README.md
 └── workspace/
-    └── .gitkeep
 ```
 
-### Windows PowerShell
-
-```powershell
-mkdir kilo-docker
-cd kilo-docker
-mkdir workspace
-New-Item workspace/.gitkeep -ItemType File
-```
-
-### macOS/Linux
+The `workspace/` directory is the project folder mounted into Kilo. If
+it is not present in your clone, create it:
 
 ```bash
-mkdir -p kilo-docker/workspace
-cd kilo-docker
-touch workspace/.gitkeep
+mkdir workspace
 ```
 
-Create `Dockerfile` and `docker-compose.yml` in the `kilo-docker`
-directory using the contents below.
+PowerShell alternative:
 
-If you already have a project, copy its files into `workspace/`.
-Alternatively, change the volume mapping in Compose to mount your
-existing project path directly.
+```powershell
+New-Item -ItemType Directory -Force workspace
+```
 
-Examples:
+## 3. Put your project files in `workspace/`
+
+Copy or clone the code you want Kilo to work on into the repository's
+`workspace/` directory.
+
+Example:
+
+```text
+kilo-in-a-box/
+├── Dockerfile
+├── docker-compose.yml
+├── README.md
+└── workspace/
+    ├── app.py
+    ├── requirements.txt
+    └── ...
+```
+
+Files inside `workspace/` are mounted at `/workspace` inside the
+container. Edits made by Kilo are reflected on your host computer.
+
+### Use an existing project directory instead
+
+You can change the volume mapping in `docker-compose.yml` from:
 
 ```yaml
-# Windows: replace with your actual directory
+- ./workspace:/workspace
+```
+
+to the absolute path of your existing project. For example:
+
+```yaml
+# Windows (replace with your real path)
 - "C:/Users/your-user/source/my-project:/workspace"
 
-# Linux/macOS: replace with your actual directory
+# Linux/macOS (replace with your real path)
 - "/home/your-user/source/my-project:/workspace"
 ```
 
-Use forward slashes in Windows Compose paths. Ensure Docker Desktop is
-allowed to access the selected folder or drive.
+Use forward slashes in Windows Compose paths and ensure Docker Desktop
+can access the selected folder.
 
-## 3. Create the Dockerfile
+## 4. Build the Docker image (first time only)
 
-Save this as `Dockerfile` (with no file extension) in `kilo-docker/`:
-
-```dockerfile
-FROM node:22-bookworm
-
-RUN npm install -g @kilocode/cli
-
-WORKDIR /workspace
-
-CMD ["kilo"]
-```
-
-### Why use a Dockerfile?
-
-The `RUN npm install -g @kilocode/cli` command runs **when the image is
-built**, not each time you start a CLI session. Docker caches the
-resulting image layer and reuses it for later launches. You only need to
-rebuild when you intentionally want to update the image or when its
-build inputs change.
-
-## 4. Create `docker-compose.yml`
-
-Save this file next to the Dockerfile:
-
-```yaml
-services:
-  kilo:
-    build: .
-    image: local/kilo-cli:latest
-    working_dir: /workspace
-    stdin_open: true
-    tty: true
-    init: true
-    volumes:
-      - ./workspace:/workspace
-      - kilo-config:/root/.config/kilo
-      - kilo-data:/root/.local/share/kilo
-
-volumes:
-  kilo-config:
-  kilo-data:
-```
-
-### What the settings mean
-
----
-
-Setting Purpose
-
----
-
-`build: .` Builds the image using the
-Dockerfile in this directory.
-
-`image: local/kilo-cli:latest` Gives the locally built image a
-stable name.
-
-`working_dir: /workspace` Opens Kilo in the mounted project
-directory.
-
-`stdin_open` and `tty` Keep an interactive terminal
-available.
-
-`init: true` Adds a small init process to handle
-signals and child processes more
-cleanly.
-
-`./workspace:/workspace` Makes host project files available
-inside the container.
-
-`kilo-config` Persists files under
-`/root/.config/kilo`.
-
-`kilo-data` Persists files under
-`/root/.local/share/kilo`, if the
-CLI uses this location.
-
----
-
-The sample container runs as root, so Kilo's home directory is `/root`.
-The named volumes are managed by Docker and survive normal container
-removal.
-
-## 5. Build the image once
-
-Run these commands from the `kilo-docker/` directory:
+From the `kilo-in-a-box/` directory, run:
 
 ```bash
 docker compose build
 ```
 
-This downloads the base Node image if needed and installs Kilo in the
-custom image. The first build requires internet access and can take a
-little time.
+This builds the custom image and installs Kilo CLI in it. The first
+build downloads the Node.js base image if needed and requires an
+internet connection.
 
-To see the locally available images:
+Confirm the image exists:
 
 ```bash
 docker image ls
 ```
 
-You should see `local/kilo-cli` in the output.
+## 5. Start Kilo CLI
 
-## 6. Launch Kilo
-
-Start an interactive session:
+Run:
 
 ```bash
 docker compose run --rm kilo
 ```
 
-Docker creates a temporary container from the existing
-`local/kilo-cli:latest` image. It does **not** run `npm install` again.
-When you exit, the temporary container is removed, while the image, your
-host files, and the named volumes remain.
+The Kilo interactive terminal should open in `/workspace`.
 
-The next session uses the same command:
+On the first launch, authenticate by following the next section. On
+later launches, run the same command again:
 
 ```bash
 docker compose run --rm kilo
 ```
 
-You do not need to run `docker compose build` before every session.
+**You do not need to rebuild the image for every session.** Docker
+creates a temporary container from the existing image; `--rm` removes
+that container when you exit. The image, workspace files, and named
+volumes remain.
 
-### Verify the CLI
+## 6. Authenticate and select a model
 
-```bash
-docker compose run --rm kilo kilo --version
-docker compose run --rm kilo kilo --help
-```
-
-These commands create temporary containers too, but use the
-already-built image.
-
-## 7. Authenticate Kilo and choose a model
-
-The exact providers and authentication options depend on the installed
+Provider options and authentication steps may vary with the installed
 Kilo CLI version. Refer to the [official Kilo CLI
 guide](https://kilo.ai/docs/code-with-ai/platforms/cli).
 
-### Interactive setup (recommended)
+### Interactive authentication
 
-1.  Launch Kilo:
+1.  Start Kilo:
 
     ```bash
     docker compose run --rm kilo
@@ -237,120 +182,64 @@ guide](https://kilo.ai/docs/code-with-ai/platforms/cli).
     /connect
     ```
 
-3.  Choose a provider from the options displayed.
+3.  Select a provider from the choices displayed.
 
-4.  Follow the prompts to sign in or supply the provider's API key.
+4.  Follow the prompts to sign in or provide the provider's API key.
 
-5.  If a browser login is offered, complete it in your host browser.
-    Follow any URL or device-code instructions printed by the CLI.
+5.  If browser-based authentication is offered, complete it in your host
+    browser and follow any URL or device-code instructions printed in
+    the terminal.
 
-6.  Choose a model if prompted. Use `/models` if supported by your
+6.  Select a model if prompted. Use `/models` if supported by your
     current version to change models.
 
-7.  Test with a small task, such as asking Kilo to summarize the project
-    structure.
+7.  Test the setup with a small request, such as asking Kilo to
+    summarize the project structure.
 
-### Check CLI authentication commands
+If `/connect` or a command differs in your installed version, check
+`kilo --help` and the official CLI documentation.
 
-The CLI also provides authentication commands in supported versions.
-Check the installed version's help:
+### Where authentication is stored
 
-```bash
-docker compose run --rm kilo kilo auth --help
-docker compose run --rm kilo kilo auth list
-```
+The Compose configuration should persist Kilo's configuration with
+Docker named volumes, typically mapping:
 
-If supported by your installed version, you can start a login flow with:
+- `/root/.config/kilo` to `kilo-config`
+- `/root/.local/share/kilo` to `kilo-data`
 
-```bash
-docker compose run --rm kilo kilo auth login
-```
+The container in the provided setup runs as root, so its home directory
+is `/root`. Named volumes persist across normal
+`docker compose run --rm` sessions.
 
-If a command differs or is unavailable, use `/connect` inside the
-interactive CLI and follow the current documentation.
-
-### Where authentication is saved
-
-This Compose file mounts:
-
-- `/root/.config/kilo` to the Docker named volume `kilo-config`
-- `/root/.local/share/kilo` to the Docker named volume `kilo-data`
-
-Kilo's global configuration is documented under `~/.config/kilo/`; with
-this container's root user, that path is `/root/.config/kilo/`. The
-named volumes persist across `docker compose run --rm` sessions.
-
-To inspect the volumes:
+Run this to list Docker volumes:
 
 ```bash
 docker volume ls
 ```
 
-Compose generally prefixes volume names with the project name, for
-example `kilo-docker_kilo-config`. Run Compose from the same project
-directory and with the same project name to reuse them.
+Run Compose from the same repository directory and with the same project
+name so it reuses the same volumes.
 
-**Keep credentials private.** Do not put API keys in this README, source
-code, or version control. Anyone with sufficient access to your Docker
-host may be able to access the Docker volumes.
+**Keep credentials private.** Do not commit API keys or authentication
+files to Git. Anyone with sufficient access to your Docker host may be
+able to access Docker volumes.
 
-## 8. Work on your local project
+## 7. Use Kilo safely
 
-Place project files under `workspace/`:
-
-```text
-kilo-docker/
-├── Dockerfile
-├── docker-compose.yml
-├── README.md
-└── workspace/
-    ├── app.py
-    ├── requirements.txt
-    └── ...
-```
-
-Launch Kilo:
-
-```bash
-docker compose run --rm kilo
-```
-
-Try a review-first prompt:
+Start with a review-only task, for example:
 
 ```text
 Inspect this project, summarize its structure, and identify likely bugs.
-Do not modify any files until you explain the proposed changes.
+Do not modify files until you explain the proposed changes.
 ```
 
-Files Kilo creates or edits inside `/workspace` are reflected in your
-local `workspace/` directory immediately.
+Kilo can read and edit the mounted `workspace/` directory and run
+commands inside the container. Avoid mounting private host directories
+unless they are necessary.
 
-### Mount a different project directory
+## 8. Common commands
 
-Change:
-
-```yaml
-- ./workspace:/workspace
-```
-
-to an absolute path for your project. For example:
-
-```yaml
-- "C:/Users/your-user/source/my-project:/workspace"
-```
-
-or:
-
-```yaml
-- "/home/your-user/source/my-project:/workspace"
-```
-
-Replace the sample path with your actual path. After changing Compose
-configuration, run `docker compose config` to validate it.
-
-## 9. Common commands
-
-Run these from the folder containing `docker-compose.yml`:
+Run these from the repository root (`kilo-in-a-box/`):
 
 ```bash
 # Build or rebuild the image
@@ -359,13 +248,13 @@ docker compose build
 # Start an interactive Kilo session
 docker compose run --rm kilo
 
-# Check version
+# Check Kilo version
 docker compose run --rm kilo kilo --version
 
-# View help
+# Show CLI help
 docker compose run --rm kilo kilo --help
 
-# Validate the resolved Compose configuration
+# Validate Compose configuration
 docker compose config
 
 # List local Docker images
@@ -375,13 +264,22 @@ docker image ls
 docker volume ls
 ```
 
-Kilo subcommands may change between versions. Check `kilo --help` for
-the syntax supported by your installed version.
+## 9. Update Kilo or update this repository
 
-## 10. Updating Kilo
+### Update the repository files
 
-The installed Kilo version is baked into the image. To update to the
-latest package version, rebuild the image:
+```bash
+git pull
+```
+
+Review any changes to `Dockerfile` or `docker-compose.yml`. If the
+Dockerfile or installed CLI version needs to be refreshed, rebuild the
+image.
+
+### Update the installed Kilo CLI
+
+The CLI is installed during image build, not at container startup. To
+rebuild and fetch the current package version:
 
 ```bash
 docker compose build --no-cache
@@ -393,85 +291,83 @@ Then start Kilo normally:
 docker compose run --rm kilo
 ```
 
-This is when `npm install -g @kilocode/cli` runs again: during the image
-rebuild, not during every CLI session. Note that rebuilding without a
-version pin may install a newer package version. For reproducible
-builds, pin a tested package version in the Dockerfile.
+For reproducible builds, the Dockerfile can pin a tested Kilo package
+version rather than always installing the latest release.
 
-## 11. Troubleshooting
+## 10. Troubleshooting
 
-### It still installs Kilo on every launch
+### `git clone` reports permission denied
 
-Check that your `docker-compose.yml` uses:
+If using the SSH URL, make sure your SSH key is added to your GitHub
+account. Alternatively, clone with HTTPS:
 
-```yaml
-build: .
-image: local/kilo-cli:latest
+```bash
+git clone https://github.com/akumar261089/kilo-in-a-box.git
 ```
 
-and that the Dockerfile contains the npm installation under `RUN`.
-Remove the old startup command that installs Kilo, such as:
+If the repository is private, HTTPS also requires an authorized sign-in
+method.
 
-```yaml
-command: >
-  sh -lc "npm install -g @kilocode/cli &&
-          exec kilo"
-```
+### Kilo appears to install every time
 
-Then rebuild once:
+Check that the Compose service uses a prebuilt image (`build: .`) and
+that the Dockerfile installs Kilo with a
+`RUN npm install -g @kilocode/cli` instruction. Remove any Compose
+startup command that runs `npm install` before launching Kilo, then
+rebuild once:
 
 ```bash
 docker compose build
 ```
 
-### Kilo asks me to authenticate again
+### Kilo asks you to authenticate every time
 
-- Run Compose from the same project directory and with the same
+- Run Compose from the same repository directory and with the same
   project name.
-- Verify both named volumes are present in the Compose file.
-- Avoid `docker compose down -v`, which deletes the project's named
-  volumes.
-- If you changed the project name, Compose may create a new set of
+- Confirm the Kilo configuration volume is present in
+  `docker-compose.yml`.
+- Avoid `docker compose down -v`; it deletes project named volumes.
+- Changing the Compose project name can create a different set of
   volumes.
 
 ### The workspace appears empty
 
-- Put files in `workspace/`, or correct the host path in the volume
-  mapping.
-- Run `docker compose config` and verify the mount.
-- On Windows/macOS, verify Docker Desktop can access the directory.
+- Confirm your files are in `workspace/`.
+- Run `docker compose config` and verify the volume mapping.
+- If you mounted an absolute path, verify that it exists and Docker
+  can access it.
 
-### File ownership problems on Linux
+### Linux file permissions
 
-The sample runs as root inside the container. Files created by Kilo may
-therefore have ownership that differs from your host user. Review
-ownership before using recursive permission or ownership changes.
+The sample container runs as root. Files created by Kilo may have
+ownership that differs from your host user. Check ownership before
+making recursive permission or ownership changes.
 
-### Clean up
+## 11. Cleanup
 
-The `docker compose run --rm kilo` workflow removes the temporary
-container when it exits. It does not remove the image or named volumes.
+The `docker compose run --rm kilo` command removes its temporary
+container on exit. It does not remove the image or named volumes.
 
-To remove ordinary Compose-managed containers and networks:
+To stop/remove ordinary Compose-managed containers and networks:
 
 ```bash
 docker compose down
 ```
 
-To delete named volumes too, use this only if you intentionally want to
-erase persisted Kilo configuration/data:
+To also delete named volumes, including persisted Kilo configuration and
+data, run this **only if you intend to erase that data**:
 
 ```bash
 docker compose down -v
 ```
 
-Removing the image is separate:
+Remove the local image separately if desired:
 
 ```bash
 docker image rm local/kilo-cli:latest
 ```
 
-## 12. Official references
+## Official references
 
 - Kilo CLI guide: https://kilo.ai/docs/code-with-ai/platforms/cli
 - Kilo CLI repository: https://github.com/Kilo-Org/kilocode
@@ -481,11 +377,17 @@ docker image rm local/kilo-cli:latest
 
 ## Quick start
 
-1.  Create `kilo-docker/` and `kilo-docker/workspace/`.
-2.  Save the `Dockerfile` and `docker-compose.yml` above.
-3.  Put your project files into `workspace/`.
-4.  Build once: `docker compose build`.
-5.  Launch: `docker compose run --rm kilo`.
-6.  Authenticate with `/connect` and select your provider/model.
-7.  Next time, run `docker compose run --rm kilo` again; Kilo is already
-    in the image.
+```bash
+git clone git@github.com:akumar261089/kilo-in-a-box.git
+cd kilo-in-a-box
+mkdir workspace
+docker compose build
+docker compose run --rm kilo
+```
+
+Inside Kilo, use `/connect` to authenticate and select a provider/model.
+For future sessions, return to the repository directory and run:
+
+```bash
+docker compose run --rm kilo
+```
