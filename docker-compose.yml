@@ -1,0 +1,17 @@
+
+services:
+  kilo:
+    build: .
+    image: local/kilo-cli:latest
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    init: true
+    volumes:
+      - ./workspace:/workspace
+      - kilo-config:/root/.config/kilo
+      - kilo-data:/root/.local/share/kilo
+
+volumes:
+  kilo-config:
+  kilo-data:
