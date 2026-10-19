@@ -15,10 +15,138 @@ Repository: `git@github.com:akumar261089/kilo-in-a-box.git`
   volumes.
 - An interactive terminal for Kilo CLI.
 - A repeatable setup for Windows, macOS, and Linux.
+- A built-in agent ecosystem that helps with planning, coding, review,
+  testing, research, and security analysis.
 
 > **Safety:** Kilo is an agentic coding tool. It can edit files and run
 > commands. Use Git or backups, review its changes, and only mount
 > directories you want it to access.
+
+## Agent plan for software development
+
+This environment is designed to support a modern AI-assisted software
+engineering workflow using agent-based collaboration. The `@agent/*`
+set is not a single monolithic assistant; it is a toolkit of specialized
+agents that can be assigned to different parts of the development life
+cycle. This makes it easier to keep work focused, improve quality, and
+reduce the chance of missing edge cases.
+
+### Agent roles and responsibilities
+
+- `@agent/explore`
+  - Best for early repository investigation and high-level discovery.
+  - Helps map the project structure, locate the key files, and identify
+    where the change should happen.
+  - Useful when the workspace is large or when you need a quick
+    understanding before editing code.
+
+- `@agent/task`
+  - Best for execution-focused work such as builds, tests, linting,
+    validation runs, and task automation.
+  - Ideal for verifying that a feature works, checking whether a bug is
+    fixed, and collecting concrete evidence before moving forward.
+
+- `@agent/general-purpose`
+  - Best for broad implementation work across multiple files and
+    responsibilities.
+  - Handles end-to-end coding tasks, debugging sessions, and code
+    updates that require sustained reasoning and iteration.
+
+- `@agent/research`
+  - Best for fact gathering, external reference checking, and finding
+    up-to-date information from documentation or project references.
+  - Helps confirm APIs, frameworks, and expected behaviors before
+    making design decisions.
+
+- `@agent/rubber-duck`
+  - Best for design review, reasoning checks, and catching logic errors
+    before implementation is finalized.
+  - Acts like a second engineer reviewing the current plan and asking
+    whether the architecture or flow still makes sense.
+
+- `@agent/code-review`
+  - Best for reviewing diffs, pull requests, and recently changed code.
+  - Looks for logic bugs, edge cases, regressions, and unexpected side
+    effects in the current patch.
+
+- `@agent/security-review`
+  - Best for checking code for security issues and vulnerabilities.
+  - Focuses on high-risk patterns, unsafe assumptions, privileged access,
+    injection issues, and risky data handling.
+
+### Recommended workflow
+
+A strong development flow with these agents looks like this:
+
+1. Discovery and scope definition
+   - Start with `@agent/explore` to understand the repository structure,
+     dependencies, and likely impact points.
+   - Ask pointed questions such as: what files define the current
+     behavior, what is the root cause of the problem, and where should
+     the change likely live?
+
+2. Planning and design
+   - Use `@agent/rubber-duck` or `@agent/research` to validate the
+     approach.
+   - Confirm expectations, dependencies, and edge cases before writing
+     code.
+   - This reduces wasted iterations and helps the team stay aligned on
+     intent.
+
+3. Implementation
+   - Use `@agent/general-purpose` for the actual code change.
+   - Keep the implementation focused on the agreed scope and make
+     surgical edits.
+   - If the task is large, divide it into smaller milestones and validate
+     each one before moving to the next.
+
+4. Verification and testing
+   - Use `@agent/task` to run the smallest relevant test, build, lint, or
+     validation command.
+   - Confirm that behavior still matches expectations and that no
+     unrelated regressions were introduced.
+
+5. Review and hardening
+   - Use `@agent/code-review` to inspect the final patch for logic,
+     maintainability, and quality issues.
+   - Use `@agent/security-review` when the change affects authentication,
+     data processing, file access, network boundaries, or user input.
+
+6. Delivery and maintenance
+   - Summarize the result, explain what changed, and record the validation
+     steps that were run.
+   - Keep the workflow reproducible so future contributors can understand
+     how the code was reviewed and tested.
+
+### Why this model works well
+
+Using specialized agents helps avoid overloading a single assistant with
+mixed responsibilities. Each agent has a narrower focus, which improves
+clarity and reliability. In practice, this means:
+
+- exploration stays fast and targeted,
+- implementation remains grounded in the real codebase,
+- validation is evidence-based,
+- review catches issues earlier,
+- security concerns are handled explicitly rather than assumed away.
+
+### Example usage plan
+
+A common sequence for a software task could be:
+
+```text
+1. Use @agent/explore to inspect the repository and identify likely files.
+2. Use @agent/research to confirm APIs or patterns before coding.
+3. Use @agent/general-purpose to implement the fix or feature.
+4. Use @agent/task to run the minimal validation checks.
+5. Use @agent/code-review to review the final patch.
+6. Use @agent/security-review if the task involves external input, auth,
+   or sensitive data.
+```
+
+This workflow is especially useful in larger engineering projects where
+multiple concerns must be handled in a disciplined way without losing
+context.
 
 ## 1. Prerequisites
 

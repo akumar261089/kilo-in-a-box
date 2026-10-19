@@ -9,9 +9,6 @@ services:
     init: true
     volumes:
       - ./workspace:/workspace
-      - kilo-config:/root/.config/kilo
-      - kilo-data:/root/.local/share/kilo
+      - ./kilo-config:/root/.config/kilo
+      - ./kilo-data:/root/.local/share/kilo
 
-volumes:
-  kilo-config:
-  kilo-data:
