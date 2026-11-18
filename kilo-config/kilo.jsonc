@@ -1,0 +1,46 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "permission": {
+    "external_directory": {
+      "/root/*": "allow",
+      "/tmp/*": "allow",
+      "/docs/spec/tasks/*": "allow",
+      "/etc/*": "allow",
+      "/etc/apt/*": "allow"
+    },
+    "bash": {
+      "git log *": "allow",
+      "git status *": "allow",
+      "sed *": "allow",
+      ".venv/bin/ruff *": "allow",
+      "tail *": "allow",
+      "echo *": "allow",
+      ".venv/bin/python *": "allow",
+      "cat *": "allow",
+      "head *": "allow",
+      "rm *": "allow",
+      "find *": "allow",
+      "grep *": "allow",
+      "cp *": "allow",
+      "python3 *": "allow",
+      "awk *": "allow",
+      "file *": "allow",
+      "xxd *": "allow",
+      "wc *": "allow",
+      "diff *": "allow",
+      "ls *": "allow",
+      "mkdir *": "allow",
+      "/workspace/customer-portal/.venv/bin/python *": "allow"
+    },
+    "*": {
+      "*": "allow"
+    },
+    "skill": {
+      "senior-engineer": "allow",
+      "*": "allow"
+    }
+  },
+  "skills": {
+    "paths": ["~/.config/kilo/skills"]
+  }
+}
